@@ -72,7 +72,7 @@ EOT
 
         foreach ($documentClassNames AS $documentClassName) {
             try {
-                $cm = $documentManager->getClassMetadata($documentClassName);
+                $documentManager->getClassMetadata($documentClassName);
                 $output->write("<info>[OK]</info>   " . $documentClassName, true);
             } catch(\Exception $e) {
                 $output->write("<error>[FAIL]</error> " . $documentClassName, true);
