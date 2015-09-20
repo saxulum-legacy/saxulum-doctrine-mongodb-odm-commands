@@ -2,26 +2,20 @@
 
 namespace Saxulum\Tests\DoctrineMongodbOdmCommands\Command;
 
-use Dflydev\Silex\Provider\DoctrineOrm\DoctrineOrmServiceProvider;
 use Saxulum\Console\Silex\Provider\ConsoleProvider;
-use Saxulum\DoctrineOrmCommands\Command\CreateDatabaseDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\DropDatabaseDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\ClearMetadataCacheDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\ClearQueryCacheDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\ClearResultCacheDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\ConvertMappingDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\CreateSchemaDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\DropSchemaDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\EnsureProductionSettingsDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\InfoDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\RunDqlDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\RunSqlDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\UpdateSchemaDoctrineCommand;
-use Saxulum\DoctrineOrmCommands\Command\Proxy\ValidateSchemaCommand;
-use Saxulum\DoctrineOrmCommands\Helper\ManagerRegistryHelper;
-use Saxulum\DoctrineOrmManagerRegistry\Silex\Provider\DoctrineOrmManagerRegistryProvider;
+use Saxulum\DoctrineMongoDb\Silex\Provider\DoctrineMongoDbProvider;
+use Saxulum\DoctrineMongoDbOdm\Silex\Provider\DoctrineMongoDbOdmProvider;
+use Saxulum\DoctrineMongodbOdmCommands\Command\ClearMetadataCacheDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\CreateSchemaDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\DropSchemaDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\GenerateHydratorsDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\GenerateProxiesDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\InfoDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\QueryDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Command\UpdateSchemaDoctrineODMCommand;
+use Saxulum\DoctrineMongodbOdmCommands\Helper\ManagerRegistryHelper;
+use Saxulum\DoctrineMongodbOdmManagerRegistry\Silex\Provider\DoctrineMongodbOdmManagerRegistryProvider;
 use Silex\Application;
-use Silex\Provider\DoctrineServiceProvider;
 use Silex\WebTestCase;
 use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -35,142 +29,80 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:schema:create',
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
     public function testSchemaUpdateCommand()
     {
         $input = new ArrayInput(array(
-            'command' => 'doctrine:mongodb:schema:update',
-            '--force' => true,
-            '--complete' => true
+            'command' => 'doctrine:mongodb:schema:update'
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
-    public function testQueryDqlCommand()
+    public function testDropUpdateCommand()
+    {
+        $input = new ArrayInput(array(
+            'command' => 'doctrine:mongodb:schema:drop'
+        ));
+        $output = new BufferedOutput();
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        echo($output->fetch());
+    }
+
+    public function testQueryCommand()
     {
         $input = new ArrayInput(array(
             'command' => 'doctrine:mongodb:query',
-            'class' => 'SELECT e FROM Saxulum\Tests\DoctrineOrmCommands\Entity\Example e',
-            'query' =>
+            'class' => 'Saxulum\Tests\DoctrineMongodbOdmCommands\Document\Example',
+            'query' => '{}',
             '--hydrate' => 'array'
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
-    }
-
-    public function testQuerySqlCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:query:sql',
-            'sql' => 'SELECT * FROM example',
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-    }
-
-    public function testMappingConvertCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:mapping:convert',
-            'to-type' => 'xml',
-            'dest-path' => $this->getTestDirectoryPath(),
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-
-        $xmlPath = $this->getTestDirectoryPath() . '/Saxulum.Tests.DoctrineOrmCommands.Entity.Example.orm.xml';
-        $this->assertFileExists($xmlPath);
-        unlink($xmlPath);
     }
 
     public function testCacheClearMetadataCommand()
     {
         $input = new ArrayInput(array(
-            'command' => 'doctrine:cache:clear-metadata',
+            'command' => 'doctrine:mongodb:cache:clear-metadata',
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
-    public function testCacheClearQueryCommand()
+    public function testGenerateHydratorsCommand()
     {
         $input = new ArrayInput(array(
-            'command' => 'doctrine:cache:clear-query',
+            'command' => 'doctrine:mongodb:generate:hydrators',
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
-    public function testCacheClearResultCommand()
+    public function testGenerateProxiesCommand()
     {
         $input = new ArrayInput(array(
-            'command' => 'doctrine:cache:clear-result',
+            'command' => 'doctrine:mongodb:generate:proxies',
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
     public function testMappingInfoCommand()
     {
         $input = new ArrayInput(array(
-            'command' => 'doctrine:mapping:info',
+            'command' => 'doctrine:mongodb:mapping:info',
         ));
         $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-    }
-
-    public function testSchemaValidateCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:schema:validate',
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-    }
-
-    public function testEnsureProductionSettingCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:ensure-production-setting',
-            '--complete' => true,
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-    }
-
-    public function testSchemaDropCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:schema:drop',
-            '--force' => true
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
-        echo($output->fetch());
-    }
-
-    public function testDatabaseDropCommand()
-    {
-        $input = new ArrayInput(array(
-            'command' => 'doctrine:database:drop',
-            '--force' => true
-        ));
-        $output = new BufferedOutput();
-        $this->app['console']->run($input, $output);
+        $this->assertEquals(0, $this->app['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -178,33 +110,38 @@ class CommandTest extends WebTestCase
     {
         $app = new Application();
 
-        $app->register(new DoctrineServiceProvider(), array(
-            'db.options' => array(
-                'driver'   => 'pdo_sqlite',
-                'path'     => $this->getCacheDir() .'/sqlite.db',
-            ),
+        $app->register(new DoctrineMongoDbProvider(), array(
+            'mongodb.options' => array(
+                'server' => 'mongodb://localhost:27017',
+                'options' => array(
+                    'username' => 'root',
+                    'password' => 'root',
+                    'db' => 'admin'
+                )
+            )
         ));
-        $app->register(new DoctrineOrmServiceProvider(), array(
-            'orm.em.options' => array(
+        $app->register(new DoctrineMongoDbOdmProvider(), array(
+            "mongodbodm.proxies_dir" => $this->getCacheDir() . '/doctrine/proxies',
+            "mongodbodm.hydrator_dir" => $this->getCacheDir() . '/doctrine/hydrator',
+            'mongodbodm.dm.options' => array(
                 'mappings' => array(
                     array(
                         'type' => 'annotation',
-                        'namespace' => 'Saxulum\Tests\DoctrineOrmCommands\Entity',
-                        'path' => $this->getTestDirectoryPath() .'/Entity',
+                        'namespace' => 'Saxulum\Tests\DoctrineMongodbOdmCommands\Document',
+                        'path' => __DIR__.'/../Document',
                         'use_simple_annotation_reader' => false,
-                    ),
-                ),
-            ),
+                    )
+                )
+            )
         ));
-
-        $app->register(new DoctrineOrmManagerRegistryProvider());
+        $app->register(new DoctrineMongodbOdmManagerRegistryProvider());
         $app->register(new ConsoleProvider());
 
         $app['console'] = $app->share(
             $app->extend('console', function (ConsoleApplication $consoleApplication) use ($app) {
                 $consoleApplication->setAutoExit(false);
                 $helperSet = $consoleApplication->getHelperSet();
-                $helperSet->set(new ManagerRegistryHelper($app['doctrine']), 'doctrine');
+                $helperSet->set(new ManagerRegistryHelper($app['doctrine_mongodb']), 'doctrine_mongodb');
 
                 return $consoleApplication;
             })
@@ -212,20 +149,14 @@ class CommandTest extends WebTestCase
 
         $app['console.commands'] = $app->share(
             $app->extend('console.commands', function ($commands) use ($app) {
-                $commands[] = new CreateDatabaseDoctrineCommand;
-                $commands[] = new DropDatabaseDoctrineCommand;
-                $commands[] = new CreateSchemaDoctrineCommand;
-                $commands[] = new UpdateSchemaDoctrineCommand;
-                $commands[] = new DropSchemaDoctrineCommand;
-                $commands[] = new RunDqlDoctrineCommand;
-                $commands[] = new RunSqlDoctrineCommand;
-                $commands[] = new ConvertMappingDoctrineCommand;
-                $commands[] = new ClearMetadataCacheDoctrineCommand;
-                $commands[] = new ClearQueryCacheDoctrineCommand;
-                $commands[] = new ClearResultCacheDoctrineCommand;
-                $commands[] = new InfoDoctrineCommand;
-                $commands[] = new ValidateSchemaCommand;
-                $commands[] = new EnsureProductionSettingsDoctrineCommand;
+                $commands[] = new CreateSchemaDoctrineODMCommand;
+                $commands[] = new UpdateSchemaDoctrineODMCommand;
+                $commands[] = new DropSchemaDoctrineODMCommand;
+                $commands[] = new QueryDoctrineODMCommand;
+                $commands[] = new ClearMetadataCacheDoctrineODMCommand;
+                $commands[] = new GenerateHydratorsDoctrineODMCommand;
+                $commands[] = new GenerateProxiesDoctrineODMCommand;
+                $commands[] = new InfoDoctrineODMCommand;
 
                 return $commands;
             })
