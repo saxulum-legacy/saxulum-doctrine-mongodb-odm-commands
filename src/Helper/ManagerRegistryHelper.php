@@ -47,6 +47,14 @@ class ManagerRegistryHelper extends Helper
     }
 
     /**
+     * @return string
+     */
+    public function getDefaultManagerName()
+    {
+        return $this->managerRegistry->getDefaultManagerName();
+    }
+
+    /**
      * @param $name
      * @return object
      */
