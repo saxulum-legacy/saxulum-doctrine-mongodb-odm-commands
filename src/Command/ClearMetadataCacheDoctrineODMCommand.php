@@ -14,6 +14,8 @@
 
 namespace Saxulum\DoctrineMongodbOdmCommands\Command;
 
+
+use Doctrine\ODM\MongoDB\Tools\Console\Command\ClearCache\MetadataCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,7 +27,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @author Jonathan H. Wage <jonwage@gmail.com>
  * @author  Henrik Westphal <henrik.westphal@gmail.com>
  */
-class ClearMetadataCacheDoctrineODMCommand extends DoctrineODMCommand
+class ClearMetadataCacheDoctrineODMCommand extends MetadataCommand
 {
     protected function configure()
     {
