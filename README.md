@@ -16,7 +16,7 @@ Features
 Requirements
 ------------
 
- * PHP 5.3+
+ * PHP 5.5+
  * Doctrine MongoDB ODM ~1.0
 
 Installation

@@ -2,9 +2,10 @@
 
 namespace Saxulum\Tests\DoctrineMongodbOdmCommands\Command;
 
-use Saxulum\Console\Silex\Provider\ConsoleProvider;
-use Saxulum\DoctrineMongoDb\Silex\Provider\DoctrineMongoDbProvider;
-use Saxulum\DoctrineMongoDbOdm\Silex\Provider\DoctrineMongoDbOdmProvider;
+use Pimple\Container;
+use Saxulum\Console\Provider\ConsoleProvider;
+use Saxulum\DoctrineMongoDb\Provider\DoctrineMongoDbProvider;
+use Saxulum\DoctrineMongoDbOdm\Provider\DoctrineMongoDbOdmProvider;
 use Saxulum\DoctrineMongodbOdmCommands\Command\ClearMetadataCacheDoctrineODMCommand;
 use Saxulum\DoctrineMongodbOdmCommands\Command\CreateSchemaDoctrineODMCommand;
 use Saxulum\DoctrineMongodbOdmCommands\Command\DropSchemaDoctrineODMCommand;
@@ -14,22 +15,31 @@ use Saxulum\DoctrineMongodbOdmCommands\Command\InfoDoctrineODMCommand;
 use Saxulum\DoctrineMongodbOdmCommands\Command\QueryDoctrineODMCommand;
 use Saxulum\DoctrineMongodbOdmCommands\Command\UpdateSchemaDoctrineODMCommand;
 use Saxulum\DoctrineMongodbOdmCommands\Helper\ManagerRegistryHelper;
-use Saxulum\DoctrineMongodbOdmManagerRegistry\Silex\Provider\DoctrineMongodbOdmManagerRegistryProvider;
-use Silex\Application;
-use Silex\WebTestCase;
+use Saxulum\DoctrineMongodbOdmManagerRegistry\Provider\DoctrineMongodbOdmManagerRegistryProvider;
 use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-class CommandTest extends WebTestCase
+class CommandTest extends \PHPUnit_Framework_TestCase
 {
+
+    /**
+     * @var Container
+     */
+    protected $container;
+
+    public function setUp()
+    {
+        $this->container = $this->getContainer();
+    }
+
     public function testSchemaCreateCommand()
     {
         $input = new ArrayInput(array(
             'command' => 'doctrine:mongodb:schema:create',
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -39,7 +49,7 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:schema:update'
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -49,7 +59,7 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:schema:drop'
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -62,7 +72,7 @@ class CommandTest extends WebTestCase
             '--hydrate' => 'array'
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -72,7 +82,7 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:cache:clear-metadata',
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -82,7 +92,7 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:generate:hydrators',
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -92,7 +102,7 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:generate:proxies',
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
@@ -102,15 +112,16 @@ class CommandTest extends WebTestCase
             'command' => 'doctrine:mongodb:mapping:info',
         ));
         $output = new BufferedOutput();
-        $this->assertEquals(0, $this->app['console']->run($input, $output));
+        $this->assertEquals(0, $this->container['console']->run($input, $output));
         echo($output->fetch());
     }
 
-    public function createApplication()
+    private function getContainer()
     {
-        $app = new Application();
+        $container = new Container();
+        $container['debug'] = true;
 
-        $app->register(new DoctrineMongoDbProvider(), array(
+        $container->register(new DoctrineMongoDbProvider(), array(
             'mongodb.options' => array(
                 'server' => 'mongodb://localhost:27017',
 //                'options' => array(
@@ -120,7 +131,7 @@ class CommandTest extends WebTestCase
 //                )
             )
         ));
-        $app->register(new DoctrineMongoDbOdmProvider(), array(
+        $container->register(new DoctrineMongoDbOdmProvider(), array(
             "mongodbodm.proxies_dir" => $this->getCacheDir() . '/doctrine/proxies',
             "mongodbodm.hydrator_dir" => $this->getCacheDir() . '/doctrine/hydrator',
             'mongodbodm.dm.options' => array(
@@ -134,21 +145,19 @@ class CommandTest extends WebTestCase
                 )
             )
         ));
-        $app->register(new DoctrineMongodbOdmManagerRegistryProvider());
-        $app->register(new ConsoleProvider());
+        $container->register(new DoctrineMongodbOdmManagerRegistryProvider());
+        $container->register(new ConsoleProvider());
 
-        $app['console'] = $app->share(
-            $app->extend('console', function (ConsoleApplication $consoleApplication) use ($app) {
+        $container['console'] = $container->extend('console', function (ConsoleApplication $consoleApplication) use ($container) {
                 $consoleApplication->setAutoExit(false);
                 $helperSet = $consoleApplication->getHelperSet();
-                $helperSet->set(new ManagerRegistryHelper($app['doctrine_mongodb']), 'doctrine_mongodb');
+                $helperSet->set(new ManagerRegistryHelper($container['doctrine_mongodb']), 'doctrine_mongodb');
 
                 return $consoleApplication;
-            })
+            }
         );
 
-        $app['console.commands'] = $app->share(
-            $app->extend('console.commands', function ($commands) use ($app) {
+        $container['console.commands'] = $container->extend('console.commands', function ($commands) use ($container) {
                 $commands[] = new CreateSchemaDoctrineODMCommand;
                 $commands[] = new UpdateSchemaDoctrineODMCommand;
                 $commands[] = new DropSchemaDoctrineODMCommand;
@@ -159,12 +168,10 @@ class CommandTest extends WebTestCase
                 $commands[] = new InfoDoctrineODMCommand;
 
                 return $commands;
-            })
+            }
         );
 
-        $app->boot();
-
-        return $app;
+        return $container;
     }
 
     /**
